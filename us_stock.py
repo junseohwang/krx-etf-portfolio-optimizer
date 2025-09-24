@@ -181,9 +181,9 @@ if __name__ == "__main__":
                 target_shares = final_holdings.get(ticker, 0)
                 trade = target_shares - current_shares
                 if trade < 0:
-                    print(f"🔴 {ticker}: SELL {abs(trade):.4f} shares. (From {current_shares:.4f} down to {target_shares:.4f})")
+                    print(f"🔴 {ticker}: SELL {abs(trade):.6f} shares. (From {current_shares:.6f} down to {target_shares:.6f})")
                 elif trade > 0:
-                    print(f"🟢 {ticker}: BUY  {abs(trade):.4f} shares. (From {current_shares:.4f} up to {target_shares:.4f})")
+                    print(f"🟢 {ticker}: BUY  {abs(trade):.6f} shares. (From {current_shares:.6f} up to {target_shares:.6f})")
 
     else:
         print(f"✅ Drift is within the {REBALANCE_THRESHOLD:.0%} threshold. Performing Cash-Flow Rebalancing.")
@@ -214,7 +214,7 @@ if __name__ == "__main__":
             print("\n--- Recommended Buys with New Cash ---")
             for ticker, shares in sorted(final_holdings.items()):
                 value = shares * latest_prices.get(ticker, 0)
-                print(f"🟢 {ticker}: BUY {shares:.4f} shares ({value:,.0f} USD)")
+                print(f"🟢 {ticker}: BUY {shares:.6f} shares ({value:,.0f} USD)")
 
 # ================== 4. Final Summary Section ==================
 print("\n" + "="*50); print("FINAL PORTFOLIO SUMMARY (POST-REBALANCE)".center(50)); print("="*50)
@@ -247,7 +247,7 @@ if not summary_df.empty:
             value_krw = value_usd * EXCHANGE_RATE_KRW_TO_USD
             holdings_data.append({
                 "Ticker": ticker,
-                "Shares": round(shares, 4),
+                "Shares": round(shares, 6),
                 "Value (KRW)": f"{value_krw:,.0f}"
             })
     if holdings_data:
