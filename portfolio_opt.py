@@ -15,13 +15,13 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 # IMPORTANT: Update this dictionary with your actual holdings.
 CURRENT_HOLDINGS = {
     "200250.KS": 2,
-    "245710.KS": 6,
-    "314250.KS": 9,
-    "360200.KS": 21,
-    "379800.KS": 156,
+    "245710.KS": 7,
+    "314250.KS": 10,
+    "360200.KS": 22,
+    "379800.KS": 172,
     "390390.KS": 7
 }
-MONTHLY_SAVING = 450457  # New cash to invest this month (in KRW)
+MONTHLY_SAVING = 6602  # New cash to invest this month (in KRW)
 
 # --- Define your rebalancing rules ---
 REBALANCE_THRESHOLD = 0.05  # Trigger a full rebalance if any asset drifts by more than 5% (0.05)
@@ -31,11 +31,76 @@ TRANSACTION_FEE_PERCENTAGE = 0.003 # Estimate of 0.3% for brokerage fees and tax
 
 # --- Ticker list and historical data parameters ---
 TICKERS = [
-    "360750.KS", "133690.KS", "381170.KS", "381180.KS", "379800.KS",
-    "371460.KS", "360200.KS", "379810.KS", "367380.KS", "314250.KS",
-    "371160.KS", "390390.KS", "402970.KS", "195930.KS", "241180.KS",
-    "394660.KS", "200250.KS", "245710.KS", "143850.KS", "372330.KS",
-    "419170.KS" # Example of a potentially delisted ticker
+    "360750.KS", # TIGER 미국S&P500
+    "133690.KS", # TIGER 미국나스닥100
+    "379800.KS", # KODEX 미국S&P500
+    "381170.KS", # TIGER 미국테크TOP10 INDXX
+    "379810.KS", # KODEX 미국나스닥100
+    "381180.KS", # TIGER 미국필라델피아반도체나스닥
+    "360200.KS", # ACE 미국S&P500
+    "458730.KS", # TIGER 미국배당다우존스
+    "367380.KS", # ACE 미국나스닥100
+    "371460.KS", # TIGER 차이나전기차SOLACTIVE
+    "371160.KS", # TIGER 차이나항셍테크
+    "368590.KS", # RISE 미국나스닥100
+    "457480.KS", # ACE 테슬라밸류체인액티브
+    "487230.KS", # KODEX 미국AI전력핵심인프라
+    "379780.KS", # RISE 미국S&P500
+    "458760.KS", # TIGER 미국배당다우존스타겟커버드콜2호
+    "486290.KS", # TIGER 미국나스닥100타겟데일리커버드콜
+    "465580.KS", # ACE 미국빅테크TOP7 Plus
+    "456600.KS", # TIMEFOLIO 글로벌AI인공지능액티브
+    "446720.KS", # SOL 미국배당다우존스
+    "314250.KS", # KODEX 미국빅테크10(H)
+    "449180.KS", # KODEX 미국S&P500(H)
+    "441640.KS", # KODEX 미국배당커버드콜액티브
+    "402970.KS", # ACE 미국배당다우존스
+    "426030.KS", # TIMEFOLIO 미국나스닥100액티브
+    "497570.KS", # TIGER 미국필라델피아AI반도체나스닥
+    "390390.KS", # KODEX 미국반도체
+    "474220.KS", # TIGER 미국테크TOP10타겟커버드콜
+    "453870.KS", # TIGER 인도니프티50
+    "483280.KS", # KODEX 미국AI테크TOP10타겟커버드콜
+    "449190.KS", # KODEX 미국나스닥100(H)
+    "453810.KS", # KODEX 인도Nifty50
+    "448290.KS", # TIGER 미국S&P500(H)
+    "251350.KS", # KODEX MSCI선진국
+    "446770.KS", # ACE 글로벌반도체TOP4 Plus SOLACTIVE
+    "441680.KS", # TIGER 미국나스닥100커버드콜(합성)
+    "494300.KS", # KODEX 미국나스닥100데일리커버드콜OTM
+    "489250.KS", # KODEX 미국배당다우존스
+    "482730.KS", # TIGER 미국S&P500타겟데일리커버드콜
+    "466950.KS", # TIGER 글로벌AI액티브
+    "442320.KS", # RISE 글로벌원자력
+    "394660.KS", # TIGER 글로벌자율주행&전기차SOLACTIVE
+    "245710.KS", # ACE 베트남VN30(합성)
+    "241180.KS", # TIGER 일본니케이225
+    "448300.KS", # TIGER 미국나스닥100(H)
+    "481180.KS", # SOL 미국AI소프트웨어
+    "472160.KS", # TIGER 미국테크TOP10 INDXX(H)
+    "473460.KS", # KODEX 미국서학개미
+    "423920.KS", # TIGER 미국필라델피아반도체레버리지(합성)
+    "0060H0.KS", # TIGER 토탈월드스탁액티브
+    "394670.KS", # TIGER 글로벌리튬&2차전지SOLACTIVE(합성)
+    "491010.KS", # TIGER 글로벌AI전력인프라액티브
+    "0051G0.KS", # SOL 미국원자력SMR
+    "409820.KS", # KODEX 미국나스닥100레버리지(합성 H)
+    "0047A0.KS", # TIGER 차이나테크TOP10
+    "486450.KS", # SOL 미국AI전력인프라
+    "452360.KS", # SOL 미국배당다우존스(H)
+    "481190.KS", # SOL 미국테크TOP10
+    "200250.KS", # KIWOOM 인도Nifty50(합성)
+    "490590.KS", # RISE 미국AI밸류체인데일리고정커버드콜
+    "493810.KS", # TIGER 미국AI빅테크10타겟데일리커버드콜
+    "478150.KS", # TIMEFOLIO 글로벌우주테크&방산액티브
+    "485540.KS", # KODEX 미국AI테크TOP10
+    "418660.KS", # TIGER 미국나스닥100레버리지(합성)
+    "192090.KS", # TIGER 차이나CSI300
+    "480020.KS", # ACE 미국빅테크7+데일리타겟커버드콜(합성)
+    "372330.KS", # KODEX 차이나항셍테크
+    "414780.KS", # TIGER 차이나과창판STAR50(합성)
+    "283580.KS", # KODEX 차이나CSI300
+    "498270.KS" # KIWOOM 미국양자컴퓨팅
 ]
 START_DATE = "2015-01-01"
 END_DATE = datetime.now().strftime("%Y-%m-%d")
