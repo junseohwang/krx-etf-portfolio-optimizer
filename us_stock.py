@@ -12,10 +12,13 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 # ================== 1. Configuration Section ==================
 CURRENT_HOLDINGS = {
-    "AAPL": 0.006594,
-    "TSLA": 0.000082
+    "ABBV": 0.003198,
+    "XOM": 0.006197,
+    "LLY": 0.00095,
+    "GE": 0.002313,
+    "PM": 0.004341
 }
-MONTHLY_SAVING = 10000  # in KRW
+MONTHLY_SAVING = 12000  # in KRW
 TRANSACTION_FEE_PERCENTAGE = 0.001  # 0.1%
 EXCHANGE_RATE_BASE = 1396.25
 SPREAD = 15  # KRW
@@ -57,6 +60,7 @@ def fetch_etf_data(tickers, start_date, end_date):
         price_data = raw_data
     return price_data.dropna(axis=1, how='any')
 
+
 def get_or_create_target_weights(tickers_for_opt, weights_file, start_date, end_date):
     """Loads target weights if file is recent, otherwise runs optimization."""
     run_optimization = True
@@ -85,13 +89,14 @@ def get_or_create_target_weights(tickers_for_opt, weights_file, start_date, end_
         mu = expected_returns.mean_historical_return(df_filtered)
         S = risk_models.CovarianceShrinkage(df_filtered).ledoit_wolf()
         ef = EfficientFrontier(mu, S)
-        weights = ef.max_sharpe()
+        ef.max_sharpe()
         target_weights = ef.clean_weights()
         pd.DataFrame.from_dict(target_weights, orient='index', columns=['weight']).to_csv(weights_file)
         print(f"   📎 New target weights saved to '{weights_file}'.")
         print("\nOptimized Portfolio Performance:")
         ef.portfolio_performance(verbose=True)
     return target_weights
+
 
 def _get_renormalized_weights(weights, available_tickers):
     """Filters weights for available tickers and renormalizes them to sum to 1."""
@@ -106,21 +111,44 @@ def _get_renormalized_weights(weights, available_tickers):
     if weight_sum <= 0:
         print(f"❌ ERROR: No valid tickers with positive weights left after filtering.")
         return {}
-
     return {ticker: weight / weight_sum for ticker, weight in filtered_weights.items()}
+
+
+def print_recommended_action_table(final_holdings, current_holdings, latest_prices, exchange_rate):
+    """Prints buy/sell recommendations in 1,000 KRW units."""
+    actions = []
+    for ticker in sorted(set(current_holdings.keys()) | set(final_holdings.keys())):
+        current_shares = current_holdings.get(ticker, 0)
+        target_shares = final_holdings.get(ticker, 0)
+        trade = target_shares - current_shares
+        price_usd = latest_prices.get(ticker, 0)
+        krw_value = trade * price_usd * exchange_rate
+        krw_thousand = round(krw_value / 1000, 1)
+        if abs(krw_thousand) >= 1:
+            actions.append({
+                "Ticker": ticker,
+                "Action": "BUY" if trade > 0 else "SELL",
+                "Shares Δ": f"{trade:+.6f}",
+                "Approx KRW (₩1,000)": f"{krw_thousand:+,.1f}"
+            })
+    if actions:
+        print("\n📊 Recommended Action Summary (₩1,000 units):")
+        print(pd.DataFrame(actions).to_string(index=False))
+    else:
+        print("\nNo buy/sell actions exceeding ₩1,000 were recommended.")
+
 
 # ================== 3. Main Execution ==================
 if __name__ == "__main__":
-    from math import floor
-
     all_relevant_tickers = list(set(TICKERS) | set(CURRENT_HOLDINGS.keys()))
     target_weights = get_or_create_target_weights(all_relevant_tickers, WEIGHTS_FILE, START_DATE, END_DATE)
-
     if target_weights is None:
         print("\nCould not generate target weights. Exiting.")
         exit()
 
-    print("\n" + "="*50); print("ANALYZING CURRENT PORTFOLIO".center(50)); print("="*50)
+    print("\n" + "="*50)
+    print("ANALYZING CURRENT PORTFOLIO".center(50))
+    print("="*50)
     owned_tickers = [ticker for ticker, shares in CURRENT_HOLDINGS.items() if shares > 0]
     tickers_to_price = list(set(owned_tickers) | set(target_weights.keys()))
     prices_df = fetch_etf_data(tickers_to_price, START_DATE, END_DATE)
@@ -130,7 +158,7 @@ if __name__ == "__main__":
     latest_prices = get_latest_prices(prices_df)
 
     current_values = {ticker: latest_prices.get(ticker, 0) * CURRENT_HOLDINGS.get(ticker, 0) for ticker in owned_tickers}
-    current_portfolio_value = round(current_portfolio_value, 2)
+    current_portfolio_value = round(sum(current_values.values()), 2)
     current_portfolio_value_krw = current_portfolio_value * EXCHANGE_RATE_KRW_TO_USD
     print(f"Current Portfolio Value: {current_portfolio_value:,.2f} USD ({current_portfolio_value_krw:,.0f} KRW)")
 
@@ -140,7 +168,9 @@ if __name__ == "__main__":
             if ticker in current_weights:
                 current_weights[ticker] = value / current_portfolio_value
 
-    print("\n" + "="*50); print("CHECKING REBALANCE TRIGGER".center(50)); print("="*50)
+    print("\n" + "="*50)
+    print("CHECKING REBALANCE TRIGGER".center(50))
+    print("="*50)
     drift_data, needs_full_rebalance = [], False
     for ticker in sorted(list(set(current_weights.keys()) | set(target_weights.keys()))):
         target = target_weights.get(ticker, 0)
@@ -148,10 +178,13 @@ if __name__ == "__main__":
         drift = current - target
         if drift != 0 or target != 0:
             drift_data.append({"Ticker": ticker, "Target": f"{target:.1%}", "Current": f"{current:.1%}", "Drift": f"{drift:.1%}"})
-        if abs(drift) > REBALANCE_THRESHOLD: needs_full_rebalance = True
+        if abs(drift) > REBALANCE_THRESHOLD:
+            needs_full_rebalance = True
     print(pd.DataFrame(drift_data).to_string(index=False))
 
-    print("\n" + "="*50); print("RECOMMENDED ACTION".center(50)); print("="*50)
+    print("\n" + "="*50)
+    print("RECOMMENDED ACTION".center(50))
+    print("="*50)
 
     usd_monthly_saving = round(MONTHLY_SAVING / EXCHANGE_RATE_KRW_TO_USD, 2)
     print(f"\n💱 KRW {MONTHLY_SAVING:,} → ${usd_monthly_saving} USD (after exchange)")
@@ -169,7 +202,7 @@ if __name__ == "__main__":
             final_holdings = {}
             for ticker, weight in renormalized_weights.items():
                 amount_krw = total_value_for_rebalance * weight * EXCHANGE_RATE_KRW_TO_USD
-                rounded_amount_krw = (amount_krw // 1000) * 1000  # round down to nearest 1,000 KRW
+                rounded_amount_krw = (amount_krw // 1000) * 1000
                 amount_usd = rounded_amount_krw / EXCHANGE_RATE_KRW_TO_USD
                 shares = amount_usd / latest_prices[ticker]
                 krw_value = shares * latest_prices[ticker] * EXCHANGE_RATE_KRW_TO_USD
@@ -181,9 +214,11 @@ if __name__ == "__main__":
                 target_shares = final_holdings.get(ticker, 0)
                 trade = target_shares - current_shares
                 if trade < 0:
-                    print(f"🔴 {ticker}: SELL {abs(trade):.6f} shares. (From {current_shares:.6f} down to {target_shares:.6f})")
+                    print(f"🔴 {ticker}: SELL {abs(trade):.6f} shares. (From {current_shares:.6f} → {target_shares:.6f})")
                 elif trade > 0:
-                    print(f"🟢 {ticker}: BUY  {abs(trade):.6f} shares. (From {current_shares:.6f} up to {target_shares:.6f})")
+                    print(f"🟢 {ticker}: BUY  {abs(trade):.6f} shares. (From {current_shares:.6f} → {target_shares:.6f})")
+
+            print_recommended_action_table(final_holdings, CURRENT_HOLDINGS, latest_prices, EXCHANGE_RATE_KRW_TO_USD)
 
     else:
         print(f"✅ Drift is within the {REBALANCE_THRESHOLD:.0%} threshold. Performing Cash-Flow Rebalancing.")
@@ -204,20 +239,24 @@ if __name__ == "__main__":
         if renormalized_weights:
             final_holdings = CURRENT_HOLDINGS.copy()
             for ticker, weight in renormalized_weights.items():
-                amount_krw = total_value_for_rebalance * weight * EXCHANGE_RATE_KRW_TO_USD
-                rounded_amount_krw = (amount_krw // 1000) * 1000  # round down to nearest 1,000 KRW
+                amount_krw = cash_to_invest * weight * EXCHANGE_RATE_KRW_TO_USD
+                rounded_amount_krw = (amount_krw // 1000) * 1000
                 amount_usd = rounded_amount_krw / EXCHANGE_RATE_KRW_TO_USD
                 shares = amount_usd / latest_prices[ticker]
-                krw_value = shares * latest_prices[ticker] * EXCHANGE_RATE_KRW_TO_USD
-                if krw_value >= 1000:
+                if shares > 0:
                     final_holdings[ticker] = final_holdings.get(ticker, 0) + shares
+
             print("\n--- Recommended Buys with New Cash ---")
             for ticker, shares in sorted(final_holdings.items()):
                 value = shares * latest_prices.get(ticker, 0)
                 print(f"🟢 {ticker}: BUY {shares:.6f} shares ({value:,.0f} USD)")
 
+            print_recommended_action_table(final_holdings, CURRENT_HOLDINGS, latest_prices, EXCHANGE_RATE_KRW_TO_USD)
+
 # ================== 4. Final Summary Section ==================
-print("\n" + "="*50); print("FINAL PORTFOLIO SUMMARY (POST-REBALANCE)".center(50)); print("="*50)
+print("\n" + "="*50)
+print("FINAL PORTFOLIO SUMMARY (POST-REBALANCE)".center(50))
+print("="*50)
 
 summary_tickers = list(target_weights.keys())
 summary_tickers = [t for t in summary_tickers if t in prices_df.columns]
@@ -228,7 +267,6 @@ if not summary_df.empty:
     S_summary = risk_models.CovarianceShrinkage(summary_df).ledoit_wolf()
 
     renormalized_summary_weights = _get_renormalized_weights(target_weights, summary_df.columns)
-
     if renormalized_summary_weights:
         ef_summary = EfficientFrontier(mu_summary, S_summary)
         ef_summary.set_weights(renormalized_summary_weights)
